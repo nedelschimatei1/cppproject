@@ -9,11 +9,8 @@ using namespace std;
 class EventLocation {
 private:
     string locationName = "";
-    const int maxnrSeats;
-    int nrZones = 0 ;
-    int nrRows = 0;
-    int seatsPerRow = 0;
-    int** availableSeats = nullptr;
+    int nrZones = 0;
+    Zone* zones = nullptr;
 
 public:
 
@@ -25,112 +22,181 @@ public:
         this->locationName = location;
     }
 
-    void setNumRows(int rows) {
-        if (rows < 0) {
-            throw exception("Negative number of rows, please enter another number");
-        }
-        this->nrRows = rows;
-    }
-
-    void setNumZones(int zones) {
-        if (zones < 0) {
-            throw exception("Negative number of zones, please enter another number");
-        }
-        this->nrZones = zones;
-    }
-
-    void setSeatsPerRow(int seats) {
-        if (seats < 0) {
-            throw exception("Negative number of seats, please enter another number");
-        }
-        this->seatsPerRow = seats;
-    }
-
-   void setAvailableSeats(int rows,int seats) {
-       if (this->availableSeats != nullptr) {
-           for (int i = 0; i < this->nrRows; ++i) {
-               delete[](this->availableSeats)[i];
-           }
-           delete[](this->availableSeats);
-           this->availableSeats = nullptr;
-       }
-       if ((this->nrRows * this->seatsPerRow) < (this->maxnrSeats) && (this->nrRows)>0 && (this->seatsPerRow) > 0) {
-            setNumRows(rows);
-            setSeatsPerRow(seats);
-            this->availableSeats = new int*[this->seatsPerRow];
-            for (int i = 0; i < this->seatsPerRow; ++i) {
-                this->availableSeats[i] = new int[this->seatsPerRow];
+    void addZone(const Zone& z) {
+        this->nrZones += 1;
+        Zone* copy = new Zone[nrZones];
+        copy[nrZones - 1] = z;
+        if (this->zones != nullptr) {
+            for (int i = 0; i < this->nrZones - 1; i++) {
+                copy[i] = this->zones[i];
             }
-            for (int i = 0; i < this->nrRows; ++i) {
-                for (int j = 0; j < this->seatsPerRow; ++j) {
-                    this->availableSeats[i][j] = 0;
-                }
-            }
+            delete[] zones;
+            this->zones = nullptr;
         }
+        this->zones = copy;
     }
-
-   void buyaSeat(int row,int seat) {
-       for (int i = 0; i < this->nrRows; ++i) {
-           for (int j = 0; j < this->seatsPerRow; ++j) {
-               this->availableSeats[row-1][seat-1] = 1;
-           }
-       }
-   }
-
 
     // Accessor methods
     string getLocationName() {
         return this->locationName;
     }
 
-    int getMaxSeats() {
-        return this->maxnrSeats;
-    }
-
-    int getNumRows() {
-        return this->nrRows;
-    }
-    
-    int getSeatsPerRow() {
-        return this->seatsPerRow;
-    }
 
     int getNumZones() {
         return this->nrZones;
     }
 
-    void getAvailableSeats() {
-        for (int i = 0; i < this->nrRows; i++) {
-            for (int j = 0; j < this->seatsPerRow; j++) {
-                cout << this->availableSeats[i][j] << " ";
+    string getZoneNames() {
+        if (this->zones != nullptr) {
+            for (int i = 0; i < this->nrZones; i++) {
+                cout << this->zones[i].getZoneName() << " ";
             }
-            cout << endl;
+        }
+        else {
+            throw exception("No zones available! Please add at least one");
         }
     }
+
     // Other processing method
-    // 
     //void printLocationDetails();
 
     //Constructors
-    EventLocation(const string locationName, int maxnrSeats, int nrZones, int nrRows, int seatsPerRow) :maxnrSeats(maxnrSeats) {
+    EventLocation(const string locationName,const Zone& z) {
         setLocationName(locationName);
-        setNumZones(nrZones);
-        setNumRows(nrRows);
-        setSeatsPerRow(seatsPerRow);
-        setAvailableSeats(nrRows,seatsPerRow);
-        cout << "Object Created"<<endl;
+        addZone(z);
+    }
+
+    EventLocation(const string locationName) {
+        setLocationName(locationName);
 
     }
 
     //Destructor
     ~EventLocation() {
-        if (this->availableSeats != nullptr) {
-            for (int i = 0; i < this->nrRows; ++i) {
-                delete[] (this->availableSeats)[i];
-            }
-            delete[] (this->availableSeats);
-            this->availableSeats = nullptr;
-            }
+        if (zones != nullptr) {
+            delete[] this->zones;
+            this->zones = nullptr;
         }
+    };
 };
 
+class Zone {
+    string zoneName = "";
+    int zoneTicketPrice = 0;
+    int nrRows = 0;
+    Row* zoneSeats = nullptr;
+
+public:
+    //Setters
+    void zoneName(const string zoneName) {
+        this->zoneName = zoneName;
+    }
+
+    void setZoneTicketPrice(int price) {
+        this->zoneTicketPrice = price;
+    }
+
+    void addRow(const Row& r) {
+        this->nrRows += 1;
+        Row* copy = new Row[nrRows];
+        copy[nrRows - 1] = r;
+        if (this->zoneSeats != nullptr) {
+            for (int i = 0; i < this->nrRows - 1; i++) {
+                copy[i] = this->zoneSeats[i];
+            }
+            delete[] this->zoneSeats;
+            this->zoneSeats = nullptr;
+        }
+        this->zoneSeats = copy;
+    }
+
+    //void getZoneseats() {
+    //    if (this->zoneSeats != nullptr) {
+    //        for (int i = 0; i < this->nrRows; i++) {
+    //            for (int i = 0; i < zoneSeats[i].getNoSeats(); i++) {
+    //                 cout << zoneSeats[i] << endl;
+    //            }
+    //        }
+    //    }
+    //    else {
+    //        throw exception("No seats available! Please add at least one row");
+    //    }
+    //}
+
+    //Getters
+    string getZoneName() {
+        return this->zoneName;
+    }
+
+    int getZoneTicketPrice() {
+        return this->zoneTicketPrice;
+    }
+
+    ~Zone() {
+        if (this->zoneSeats != nullptr) {
+            delete[] this->zoneSeats;
+            this->zoneSeats = nullptr;
+        }
+    };
+
+    friend std::ostream& operator <<(std::ostream& os, const Row& c) {
+        return  os << c.getSeats();
+    };
+};
+
+
+class Row {
+    int noSeats = 0; 
+    int* seats = nullptr;
+
+public:
+    
+    void setNoSeats(int nrseats) {
+        if (nrseats < 0 || nrseats == 0) {
+            throw exception("Invalid number of seats, enter an integer number bigger than 0.");
+        }
+        this->noSeats = nrseats;
+    }
+
+
+    //Setters
+    void setSeats() {
+        if(this->seats!=nullptr){
+            delete[] this->seats;
+            this->seats = nullptr;
+        }
+        seats = new int[this->noSeats];
+        for (int i = 0; i < this->noSeats; i++){
+            seats[i] = 0;
+        }
+    }
+
+    //Getters
+    int getNoSeats() {
+        return this->noSeats;
+    }
+
+    void getSeats() {
+        for (int i = 0; i < this->noSeats; i++) {
+            cout << seats[i] << "\t";
+        }
+        cout << endl;
+    }
+
+   Row(int noSeats,const int* vector) {
+        setNoSeats(noSeats);
+        setSeats();
+    }
+
+   Row() {
+
+   };
+
+
+   ~Row() {
+       if (this->seats != nullptr) {
+           delete[] this->seats;
+           this->seats = nullptr;
+       }
+   };
+};
