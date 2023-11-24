@@ -3,9 +3,160 @@
 
 using namespace std;
 
+class Seat {
+    int seatNumber = 0;
+    bool isAvailable = true;
+    bool isStandard = false;
+    bool isForDisabled = false;
+    bool isBlocked = false;
+    bool isChosen = false;
+    bool isVIP = false;
+
+public:
+    //Setters
+    void setSeatNumber(int number) {
+        if (number >= 0) {
+            this->seatNumber = number;
+        }
+        else
+            throw exception("The number you entered for the seat number is not a positive int.");
+    }
+
+    void setIsVIP(bool itis) {
+        if (itis) {
+            this->isVIP = true;
+            this->isStandard = false;
+        }
+        else
+            this->isStandard = true;
+    }
+
+    void setIsStandard(bool itis) {
+        if (itis) {
+            this->isVIP = false;
+            this->isStandard = true;
+        }
+    }
+
+    void isForDisable() {
+        this->isForDisabled = true;
+    }
+    
+    void isNotForDisabled() {
+        this->isForDisabled = false;
+    }
+
+    void blockSeat(){
+        this->isBlocked = true;
+        this->isAvailable = false;
+    }
+
+    void unblockSeat() {
+        this->isBlocked = false;
+        this->isAvailable = true;
+    }
+
+    void chooseSeat() {
+        this->isChosen = true;
+    }
+    
+    //Getters
+    int getSeatNumber() {
+        return this->seatNumber;
+    }
+
+    bool checkIfItsAvailable() {
+        return this->isAvailable;
+    }
+    
+    bool checkIfItsForDisabled() {
+        return this->isForDisabled;
+    }
+
+    bool checkIfItsBlocked() {
+        return this->isBlocked;
+    }
+
+
+    void displaySeat() {
+        cout << "[" << this->seatNumber << "]" << " ";
+    }
+  
+    //Overloading ! operator
+    friend bool operator!(const Seat& s) {
+        if (s.seatNumber >= 0) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    //Constructors
+    Seat(int number, bool available, bool isVip,bool blocked) {
+        this->isAvailable = available;
+        setSeatNumber(number);
+        setIsVIP(isVip);
+        if (blocked) {
+            blockSeat();
+        }
+    }
+
+    Seat(int number, bool available, bool isVip) {
+        this->isAvailable = available;
+        setSeatNumber(number);
+        setIsVIP(isVip);
+    }
+
+    //Overloading = operator
+    Seat& operator=(const Seat& source) {
+        if (this->seatNumber == source.seatNumber) {
+            exit;
+        }
+        else if (!source) {
+            this->seatNumber = source.seatNumber;
+            this->isAvailable = source.isAvailable;
+            this->isStandard = source.isStandard;
+            this->isForDisabled = source.isForDisabled;
+            this->isBlocked = source.isBlocked;
+            this->isChosen = source.isChosen;
+        }
+        else {
+            throw exception("Source seat object when passed in = has a negative seat number.");
+        }
+        return *this;
+    }
+
+    //Copy CTR
+    Seat(const Seat& source) {
+        if (this->seatNumber == source.seatNumber) {
+            return;
+        }
+        if (!source) {
+            this->seatNumber = source.seatNumber;
+            this->isAvailable = source.isAvailable;
+            this->isStandard = source.isStandard;
+            this->isForDisabled = source.isForDisabled;
+            this->isBlocked = source.isBlocked;
+            this->isChosen = source.isChosen;
+        }
+        else {
+            throw exception("Source seat object when passed in the copy ctr has a negative seat number.");
+        }
+    }
+
+
+    Seat() {
+
+    }
+
+};
+
+
 class Row {
     int noSeats = 0;
-    int* seats = nullptr;
+    Seat* seats = nullptr;
+
 public:
     //Setters
     void setNoSeats(int nrseats) {
@@ -15,18 +166,26 @@ public:
         this->noSeats = nrseats;
     }
 
-    void setSeats() {
-        if (this->seats != nullptr) {
-            delete[] this->seats;
-            this->seats = nullptr;
+    void addSeats(const Seat& s) {
+        if (!s) {
+            this->noSeats += 1;
+            Seat* copy = new Seat[this->noSeats];
+            copy[this->noSeats - 1] = s;
+            if (this->seats != nullptr) {
+                for (int i = 0; i < this->noSeats - 1; i++) {
+                    copy[i] = this->seats[i];
+            }
+                delete[] this->seats;
+                this->seats = nullptr;
+            }
+            this->seats = copy;
         }
-        seats = new int[this->noSeats];
-        for (int i = 0; i < this->noSeats; i++) {
-            seats[i] = 0;
+        else {
+            throw exception("Trying to add a Row object with the seats attribute = to a nullptr");
         }
     }
 
-    void setSeatsWithVector(const int* vector,int sizeofvect) {
+    void setSeatsWithVectorOfSeats(const Seat* vector,int sizeofvect) {
         if (sizeofvect <= 0) {
             throw exception("Size of vector 0 or negative, enter a valid one.");
         }
@@ -35,7 +194,7 @@ public:
             delete[] this->seats;
             this->seats = nullptr;
         }
-        seats = new int[sizeofvect];
+        seats = new Seat[sizeofvect];
         for (int i = 0; i < sizeofvect; i++) {
             seats[i] = vector[i];
         }
@@ -48,9 +207,9 @@ public:
     }
     
     
-    int* getSeats() {
+    Seat* getSeats() {
         if (this->seats != nullptr) {
-            int* copy = new int[this->noSeats];
+            Seat* copy = new Seat[this->noSeats];
             for (int i = 0; i < this->noSeats; i++) {
                 copy[i] = this->seats[i];
             }
@@ -66,21 +225,20 @@ public:
     void displaySeats() {
         if (this->noSeats != 0) {
             for (int i = 0; i < this->noSeats; i++) {
-                cout << seats[i] << " ";
+                seats[i].displaySeat();
             }
             cout << endl;
         }
     }
 
     //Constructors
-    Row(int noSeats) {
-        setNoSeats(noSeats);
-        setSeats();
+    Row(const Seat& s) {
+        addSeats(s);
     };
 
-    Row(const int* vector,int sizeofvector) {
+    Row(const Seat* vector,int sizeofvector) {
         setNoSeats(sizeofvector);
-        setSeatsWithVector(vector,sizeofvector);
+        setSeatsWithVectorOfSeats(vector,sizeofvector);
     };
 
     Row() {
@@ -104,7 +262,7 @@ public:
         }
         else if(!source){
             delete[] this->seats;
-            this->seats = new int[source.noSeats];
+            this->seats = new Seat[source.noSeats];
             for (int i = 0; i < source.noSeats; i++) {
                 this->seats[i] = source.seats[i];
             }
@@ -121,7 +279,7 @@ public:
             return;
         }
         if (!r) {
-            this->seats = new int[r.noSeats];
+            this->seats = new Seat[r.noSeats];
             for (int i = 0; i < r.noSeats; i++) {
                 seats[i] = r.seats[i];
             }
