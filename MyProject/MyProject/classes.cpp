@@ -619,3 +619,17 @@ public:
         }
     };
 };
+
+class EventDetails {
+    char* eventName = nullptr;
+    string eventDate = "";
+    string eventTime = "";
+};
+
+class Ticket {
+    const int uniqueIdCounter;
+    char* ticketType = nullptr;
+
+public:
+    static int ticketsSold;
+};
