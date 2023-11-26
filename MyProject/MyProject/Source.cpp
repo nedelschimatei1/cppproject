@@ -1,4 +1,5 @@
 #include <iostream>
+#include <ctime>
 #include "classes.cpp"
 
 using namespace std;
@@ -19,5 +20,10 @@ int main() {
 	ev3.displaySeatsFromZones();
 	ev1.printLocationDetails();
 	ev1.displaySeatsFromZones();
+	EventDetails eve1("Name", "01-10-2003", "20:11");
+	EventDetails eventdet2 = eve1;
+	cout << eventdet2.getEventName()<<endl;
+	cout << eventdet2.getEventTime()<<endl;
+	cout << eventdet2.getEventDate()<<endl;
 	return 0;
 }

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <ctime>
 
 using namespace std;
 
@@ -617,13 +618,172 @@ public:
             delete[] this->zones;
             this->zones = nullptr;
         }
-    };
+    }
 };
 
 class EventDetails {
     char* eventName = nullptr;
     string eventDate = "";
     string eventTime = "";
+    
+    EventDetails() {
+    }
+public:
+
+    //Check function for date time format hh:mm
+    bool isValidTimeFormat(const std::string& timeStr) {
+        if (timeStr.size() != 5 || timeStr[2] != ':') {
+            return false;
+        }
+
+        for (int i : {0, 1, 3, 4}) {
+            if (!std::isdigit(timeStr[i])) {
+                return false;
+            }
+        }
+
+        int hour = std::stoi(timeStr.substr(0, 2));
+        int minute = std::stoi(timeStr.substr(3, 2));
+
+        if (minute < 0 || minute > 59 || hour < 0 || hour > 23 ) {
+            return false;
+        }
+
+        return true;
+    }
+
+    //Check function for date format string dd-mm-yyyy
+    bool isValidDateFormat(const std::string& value){
+        if (value.size() != 10 || value[2] != '-' || value[5] != '-') {
+            return false;
+        }
+
+        for (int i : {0, 1, 3, 4, 6, 7, 8, 9}) {
+            if (!std::isdigit(value[i])) {
+                return false;
+            }
+        }
+
+        int day = std::stoi(value.substr(0, 2));
+        int month = std::stoi(value.substr(3, 2));
+        int year = std::stoi(value.substr(6, 4));
+
+        if (month < 1 || month > 12 || day < 1 || day > 31) {
+            return false;
+        }
+
+        return true;
+    }
+
+    //Setters
+    void setEventName(const char* newName) {
+        if (this->eventName != nullptr) {
+            delete[] this->eventName;
+            this->eventName = nullptr;
+        }
+        this->eventName = new char[strlen(newName) + 1];
+        strcpy_s(this->eventName, strlen(newName) + 1, newName);
+    }
+
+    void setEventDate(const string& newDate) {
+        if (isValidDateFormat(newDate)) {
+            this->eventDate = newDate;
+        }
+        else
+            throw exception("The string that you wanted to initialize eventDate with has an invalid date format, enter a dd-mm-yyyy one.");
+    }
+
+    void setEventTime(const string& newTime) {
+        if (isValidTimeFormat(newTime)) {
+            this->eventTime = newTime;
+        }
+        else
+            throw exception("The string that you wanted to initialize eventTime with has an invalid time format, enter a hh:mm one.");
+    }
+
+    //Getter
+    char* getEventName() {
+        if (this->eventName != nullptr) {
+            char* copy = new char[strlen(this->eventName) + 1];
+            strcpy_s(copy, strlen(this->eventName) + 1, this->eventName);
+            return copy;
+        }
+        else {
+            throw exception("No eventName to get.");
+        }
+    }
+    
+    string getEventDate() {
+        return this->eventDate;
+    }
+
+    string getEventTime(){
+        return this->eventTime;
+    }
+
+    //Constructors
+    EventDetails(const char* name, const string& datestr, const string& timestr) {
+        setEventName(name);
+        setEventDate(datestr);
+        setEventTime(timestr);
+    }
+
+    EventDetails(const char* name, const string& datestr) {
+        setEventName(name);
+        setEventDate(datestr);
+    }
+
+    //Overloading ! operator
+    friend bool operator!(const EventDetails& s) {
+        if (s.eventName != nullptr) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    //Overloading the "=" operator
+    EventDetails& operator=(const EventDetails& source) {
+        this->eventDate = source.eventDate;
+        this->eventTime = source.eventTime;
+        if (this->eventName == source.eventName) {
+            exit;
+        }
+        else if (!source) {
+            delete[] this->eventName;
+            this->eventName = new char[strlen(source.eventName) + 1];
+            strcpy_s(this->eventName,strlen(source.eventName) + 1, source.eventName);
+        }
+        else {
+            throw exception("Trying to assing with = a source with the dynamic attribute eventName equal to a nullptr");
+        }
+        return *this;
+    }
+
+    //Copy CTR
+    EventDetails(const EventDetails& source) {
+        if (this->eventName == source.eventName) {
+            return;
+        }
+        if (!source) {
+            this->eventDate = source.eventDate;
+            this->eventTime = source.eventTime;
+            this->eventName = new char[strlen(source.eventName) + 1];
+            strcpy_s(this->eventName, strlen(source.eventName) + 1, source.eventName);
+        }
+        else {
+            throw exception("Source for eventDetails in copy ctr has the dynamic eventName attribute equal to a nullptr.");
+        }
+    }
+
+    //Destructor
+    ~EventDetails() {
+        if (this->eventName != nullptr) {
+            delete[] this->eventName;
+            this->eventName = nullptr;
+        }
+    }
 };
 
 class Ticket {
@@ -632,4 +792,36 @@ class Ticket {
 
 public:
     static int ticketsSold;
+
+    int generateRandomNumber() {
+        time_t currentTime = time(nullptr);
+        srand(static_cast<unsigned int>(currentTime));
+        int randomNumber = rand();
+        return randomNumber;
+    }
+
+    //Setters
+    void setTicketType(const char* newType) {
+        if (strlen(newType) > 0 && strlen(newType) < 10) {
+            if (this->ticketType != nullptr) {
+                delete[] this->ticketType;
+                this->ticketType = nullptr;
+            }
+            this->ticketType = new char[strlen(newType) + 1];
+        }
+        else
+            throw exception("The ticket type you are trying to set is invalid.");
+    }
+
+    //Getters
+    char* getTicketType() {
+        if (this->ticketType != nullptr) {
+            char* copy = new char[strlen(this->ticketType) + 1];
+            strcpy_s(copy, strlen(this->ticketType) + 1, this->ticketType);
+            return copy;
+        }
+        else {
+            throw exception("No ticketType to get.");
+        }
+    }
 };
