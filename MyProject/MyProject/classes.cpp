@@ -789,6 +789,7 @@ public:
 class Ticket {
     const int uniqueIdCounter;
     char* ticketType = nullptr;
+    string holderName = "";
 
 public:
     static int ticketsSold;
@@ -798,6 +799,12 @@ public:
         srand(static_cast<unsigned int>(currentTime));
         int randomNumber = rand();
         return randomNumber;
+    }
+
+    void printTicketDetails() {
+        cout << "Unique id of the ticket:" << this->uniqueIdCounter << endl;
+        cout << "Ticket type: " << this->ticketType << endl;
+        cout << "Holder name: " << this->holderName<< endl;
     }
 
     //Setters
@@ -813,6 +820,13 @@ public:
             throw exception("The ticket type you are trying to set is invalid.");
     }
 
+    void setHoldersName(const string& name) {
+        if (name.length() > 3 || name.length() < 20) {
+            this->holderName = name;
+        }
+        else throw exception("Lenght of holdersName < 3 or holdersName > 20, enter a valid one.");
+    }
+
     //Getters
     char* getTicketType() {
         if (this->ticketType != nullptr) {
@@ -822,6 +836,35 @@ public:
         }
         else {
             throw exception("No ticketType to get.");
+        }
+    }
+
+    string getHoldersName() {
+        return this->holderName;
+    }
+
+    Ticket(const char* type) :uniqueIdCounter(generateRandomNumber()) {
+        setTicketType(type);
+    }
+
+    Ticket(const char* type, const string& holdername) :uniqueIdCounter(generateRandomNumber()) {
+        setTicketType(type);
+        setHoldersName(holdername);
+    }
+
+    friend bool operator!(const Ticket& s) {
+        if (s.ticketType != nullptr) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    ~Ticket() {
+        if (this->ticketType != nullptr) {
+            delete[] this->ticketType;
+            this->ticketType = nullptr;
         }
     }
 };
