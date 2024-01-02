@@ -5,6 +5,7 @@
 using namespace std;
 
 class Seat {
+protected:
     int seatNumber = 0;
     bool isAvailable = true;
     bool isStandard = false;
@@ -78,10 +79,19 @@ public:
         return this->isBlocked;
     }
 
+    void occupySeat() {
+        this->isAvailable = false;
+    }
 
     void displaySeat() {
-        cout << "[" << this->seatNumber << "]" << " ";
+        if (this->isAvailable) {
+            cout << this->seatNumber << " ";
+        }
+        else {
+            cout << "X" << " ";
+        }
     }
+    
   
     //Overloading ! operator
     friend bool operator!(const Seat& s) {
@@ -94,13 +104,9 @@ public:
     }
 
     //Constructors
-    Seat(int number, bool available, bool isVip,bool blocked) {
+    Seat(int number, bool available) {
         this->isAvailable = available;
         setSeatNumber(number);
-        setIsVIP(isVip);
-        if (blocked) {
-            blockSeat();
-        }
     }
 
     Seat(int number, bool available, bool isVip) {
@@ -155,6 +161,7 @@ public:
 
 
 class Row {
+protected:
     int noSeats = 0;
     Seat* seats = nullptr;
 
@@ -221,7 +228,6 @@ public:
         }
     }
 
-
     //Displaying attribute function
     void displaySeats() {
         if (this->noSeats != 0) {
@@ -232,9 +238,31 @@ public:
         }
     }
 
+    void buySeat(int num) {
+        if (!(this->seats[num - 1].checkIfItsAvailable())) {
+            throw exception("Seat already occupied.");
+        }
+        else if(this->noSeats != 0 && num-1 < this->noSeats && num >=1 ) {
+            seats[num-1].occupySeat();
+        }
+        else {
+            throw exception("The number of the seat on the row that you're trying to buy is non-existent.");
+        }
+    }
+
     //Constructors
-    Row(const Seat& s) {
-        addSeats(s);
+    Row(int num) {
+        if (num <= 0) {
+            throw exception("Invalid number of seats. Enter a positive integer.");
+        }
+        else {
+            this->noSeats = num;
+            this->seats = new Seat[num];
+            // Initialize seats with sequential numbers
+            for (int i = 0; i < noSeats; ++i) {
+                this->seats[i] = Seat(i + 1, true);
+            }
+        }
     };
 
     Row(const Seat* vector,int sizeofvector) {
@@ -301,6 +329,7 @@ public:
 };
 
 class Zone {
+protected:
     string zoneName = "";
     int zoneTicketPrice = 0;
     int nrRows = 0;
@@ -457,11 +486,13 @@ public:
 };
 
 class EventLocation {
-private:
+protected:
     string locationName = "";
     int nrZones = 0;
     Zone* zones = nullptr;
+    EventLocation() {
 
+    }
 public:
 
     // Setters
@@ -557,11 +588,6 @@ public:
 
     EventLocation(const string locationName) {
         setLocationName(locationName);
-
-    }
-
-    EventLocation() {
-
     }
 
     //Overloading !;
@@ -597,6 +623,9 @@ public:
         if (this->zones == ev.zones) {
             return;
         }
+        if (ev.locationName != "") {
+            setLocationName(ev.locationName);
+        }
         if (!ev) {
             this->locationName = ev.locationName;
             if (ev.nrZones != 0) {
@@ -622,14 +651,13 @@ public:
 };
 
 class EventDetails {
+protected:
     char* eventName = nullptr;
     string eventDate = "";
     string eventTime = "";
-    
     EventDetails() {
     }
 public:
-
     //Check function for date time format hh:mm
     bool isValidTimeFormat(const std::string& timeStr) {
         if (timeStr.size() != 5 || timeStr[2] != ':') {
@@ -763,17 +791,18 @@ public:
 
     //Copy CTR
     EventDetails(const EventDetails& source) {
+        setEventDate(source.eventDate);
+        setEventTime(source.eventTime);
         if (this->eventName == source.eventName) {
-            return;
+            exit;
         }
-        if (!source) {
-            this->eventDate = source.eventDate;
-            this->eventTime = source.eventTime;
+        else if (!source) {
+            delete[] this->eventName;
             this->eventName = new char[strlen(source.eventName) + 1];
             strcpy_s(this->eventName, strlen(source.eventName) + 1, source.eventName);
         }
         else {
-            throw exception("Source for eventDetails in copy ctr has the dynamic eventName attribute equal to a nullptr.");
+            throw exception("Trying to copy from a source with the dynamic attribute eventName equal to a nullptr(EventDetails Copy CTR)");
         }
     }
 
@@ -787,9 +816,12 @@ public:
 };
 
 class Ticket {
+protected:
     const int uniqueIdCounter;
     char* ticketType = nullptr;
     string holderName = "";
+    EventLocation location;
+    EventDetails details;
 
 public:
     static int ticketsSold;
@@ -815,6 +847,7 @@ public:
                 this->ticketType = nullptr;
             }
             this->ticketType = new char[strlen(newType) + 1];
+            strcpy_s(this->ticketType, strlen(newType) + 1, newType);
         }
         else
             throw exception("The ticket type you are trying to set is invalid.");
@@ -843,11 +876,11 @@ public:
         return this->holderName;
     }
 
-    Ticket(const char* type) :uniqueIdCounter(generateRandomNumber()) {
-        setTicketType(type);
+    Ticket(const char* type,const EventLocation& loc,const EventDetails& det) :uniqueIdCounter(generateRandomNumber()), location(loc), details(det) {
+        setTicketType(type);;
     }
 
-    Ticket(const char* type, const string& holdername) :uniqueIdCounter(generateRandomNumber()) {
+    Ticket(const char* type, const string& holdername, const EventLocation& loc, const EventDetails& det) :uniqueIdCounter(generateRandomNumber()), location(loc), details(det) {
         setTicketType(type);
         setHoldersName(holdername);
     }
@@ -866,5 +899,42 @@ public:
             delete[] this->ticketType;
             this->ticketType = nullptr;
         }
+    }
+};
+
+// Abstract ticket factory
+class TicketFactory {
+public:
+    virtual Ticket generateTicket(const string& name, const EventLocation& location, const EventDetails& details) = 0;
+    virtual ~TicketFactory() = default;
+};
+
+// Concrete factory for Football Tickets
+class FootballTicketFactory : public TicketFactory {
+public:
+    Ticket generateTicket(const string& name, const EventLocation& location, const EventDetails& details) override {
+        const char* ticketType = "Football";
+        Ticket::ticketsSold++;
+        return Ticket(ticketType,name,location, details);
+    }
+};
+
+// Concrete factory for Movie Tickets
+class MovieTicketFactory : public TicketFactory {
+public:
+    Ticket generateTicket(const string& name,const EventLocation& location, const EventDetails& details) override {
+        const char* ticketType = "Movie";
+        Ticket::ticketsSold++;
+        return Ticket(ticketType,name,location,details);
+    }
+};
+
+// Concrete factory for Theater Tickets
+class TheaterTicketFactory : public TicketFactory {
+public:
+    Ticket generateTicket(const string& name, const EventLocation& location, const EventDetails& details) override {
+        const char* ticketType = "Theater";
+        Ticket::ticketsSold++;
+        return Ticket(ticketType,name,location,details);
     }
 };
