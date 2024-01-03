@@ -1,6 +1,6 @@
 #include <iostream>
 #include <string>
-#include <ctime>
+#include <vector>
 
 using namespace std;
 
@@ -411,16 +411,44 @@ public:
         }
     }
 
+    void buyZoneSeat(int numRow, int numSeat) {
+        if (this->zoneRows == nullptr) {
+            throw exception("There are no rows in this Zone when trying to buy a seat.");
+        }
+        else if (numRow < 1 || numRow > this->nrRows) {
+            throw exception("The number of the row in the argument of buyZoneSeat is too high or lower than 1");
+        }
+        else {
+            this->zoneRows[numRow - 1].buySeat(numSeat);
+        }
+    }
+
     //Constructors
-    Zone(const string ZoneName, int zoneTicketPrice,Row& r){
+    Zone(const string& ZoneName, int zoneTicketPrice,Row& r){
         setZoneName(ZoneName);
         setZoneTicketPrice(zoneTicketPrice);
         addRow(r);
     }
 
-    Zone(const string ZoneName, int zoneTicketPrice) {
+    Zone(const string& ZoneName, int zoneTicketPrice) {
         setZoneName(ZoneName);
         setZoneTicketPrice(zoneTicketPrice);
+    }
+
+    Zone(const string& name, int price, int numRows, int numSeatsPerRow){
+        if (numRows > 0) {
+            this->nrRows = numRows;
+        }
+        else {
+            throw exception("Number of rows negative or 0 when calling the Zone CTR with rows and seats");
+        }
+        setZoneName(name);
+        setZoneTicketPrice(price);
+        zoneRows = new Row[nrRows];
+
+        for (int i = 0; i < nrRows; ++i) {
+            zoneRows[i] = Row(numSeatsPerRow);
+        }
     }
 
     Zone() {
@@ -571,6 +599,18 @@ public:
         }
         else {
             cout << "No zones to display seats from." << endl;
+        }
+    }
+
+    void buyTicketFromZones(int numZone, int numRow, int numSeat) {
+        if (this->zones == nullptr) {
+            throw exception("There are no zones available.");
+        }
+        else if (numZone < 1 || numZone > this->nrZones) {
+            throw exception("When trying to buy a ticket from buyTicketFromZones the zone number is either too high or lower than 1");
+        }
+        else {
+            this->zones[numZone-1].buyZoneSeat(numRow, numSeat);
         }
     }
 
@@ -749,6 +789,9 @@ public:
         return this->eventTime;
     }
 
+
+
+
     //Constructors
     EventDetails(const char* name, const string& datestr, const string& timestr) {
         setEventName(name);
@@ -817,7 +860,7 @@ public:
 
 class Ticket {
 protected:
-    const int uniqueIdCounter;
+    const int uniqueId;
     char* ticketType = nullptr;
     string holderName = "";
     EventLocation location;
@@ -826,15 +869,12 @@ protected:
 public:
     static int ticketsSold;
 
-    int generateRandomNumber() {
-        time_t currentTime = time(nullptr);
-        srand(static_cast<unsigned int>(currentTime));
-        int randomNumber = rand();
-        return randomNumber;
+    static int generateRandomNumber() { 
+        return rand();
     }
 
     void printTicketDetails() {
-        cout << "Unique id of the ticket:" << this->uniqueIdCounter << endl;
+        cout << "Unique id of the ticket:" << this->uniqueId << endl;
         cout << "Ticket type: " << this->ticketType << endl;
         cout << "Holder name: " << this->holderName<< endl;
     }
@@ -876,11 +916,15 @@ public:
         return this->holderName;
     }
 
-    Ticket(const char* type,const EventLocation& loc,const EventDetails& det) :uniqueIdCounter(generateRandomNumber()), location(loc), details(det) {
+    int getId() {
+        return this->uniqueId;
+    }
+
+    Ticket(int id,const char* type,const EventLocation& loc,const EventDetails& det) : uniqueId(++id), location(loc), details(det) {
         setTicketType(type);;
     }
 
-    Ticket(const char* type, const string& holdername, const EventLocation& loc, const EventDetails& det) :uniqueIdCounter(generateRandomNumber()), location(loc), details(det) {
+    Ticket(int id,const char* type, const string& holdername, const EventLocation& loc, const EventDetails& det) :uniqueId(++id), location(loc), details(det) {
         setTicketType(type);
         setHoldersName(holdername);
     }
@@ -894,6 +938,24 @@ public:
         }
     }
 
+    Ticket(const Ticket& source):uniqueId(source.uniqueId),location(source.location),details(source.details){
+       
+        if (this->uniqueId == source.uniqueId) {
+            exit;
+        }
+        else if(source.holderName != ""){
+            this->holderName = source.holderName;
+        }
+        else if (!source) {
+            delete[] this->ticketType;
+            this->ticketType= new char[strlen(source.ticketType) + 1];
+            strcpy_s(this->ticketType, strlen(source.ticketType) + 1, source.ticketType);
+        }
+        else {
+            throw exception("Trying to copy from a source with the dynamic attribute eventName equal to a nullptr(EventDetails Copy CTR)");
+        }
+    }
+
     ~Ticket() {
         if (this->ticketType != nullptr) {
             delete[] this->ticketType;
@@ -902,9 +964,27 @@ public:
     }
 };
 
+class SoldTickets {
+
+public:
+    vector <Ticket> sold_tickets;
+    void addTicket(Ticket& ticket) {
+        sold_tickets.push_back(ticket);
+    }
+
+    void printSoldTickets() {
+        for (auto it = this->sold_tickets.begin(); it != this->sold_tickets.end(); it++) {
+            cout<<it->getHoldersName();
+        }
+    }
+};
+
 // Abstract ticket factory
 class TicketFactory {
+protected:
+    SoldTickets& currentcashier;
 public:
+    TicketFactory(SoldTickets& soldTicketsRef) : currentcashier(soldTicketsRef) {};
     virtual Ticket generateTicket(const string& name, const EventLocation& location, const EventDetails& details) = 0;
     virtual ~TicketFactory() = default;
 };
@@ -912,29 +992,35 @@ public:
 // Concrete factory for Football Tickets
 class FootballTicketFactory : public TicketFactory {
 public:
+    FootballTicketFactory(SoldTickets& soldTicketsRef) : TicketFactory(soldTicketsRef) {};
     Ticket generateTicket(const string& name, const EventLocation& location, const EventDetails& details) override {
-        const char* ticketType = "Football";
         Ticket::ticketsSold++;
-        return Ticket(ticketType,name,location, details);
+        Ticket ticket = Ticket(Ticket::generateRandomNumber(), "Football", name, location, details);
+        currentcashier.addTicket(ticket);
+        return ticket;
     }
 };
 
 // Concrete factory for Movie Tickets
 class MovieTicketFactory : public TicketFactory {
 public:
+    MovieTicketFactory(SoldTickets& soldTicketsRef) : TicketFactory(soldTicketsRef) {};
     Ticket generateTicket(const string& name,const EventLocation& location, const EventDetails& details) override {
-        const char* ticketType = "Movie";
         Ticket::ticketsSold++;
-        return Ticket(ticketType,name,location,details);
+        Ticket ticket = Ticket(Ticket::generateRandomNumber(), "Movie", name, location, details);
+        currentcashier.addTicket(ticket);
+        return ticket;
     }
 };
 
 // Concrete factory for Theater Tickets
 class TheaterTicketFactory : public TicketFactory {
 public:
+    TheaterTicketFactory(SoldTickets& soldTicketsRef) : TicketFactory(soldTicketsRef) {};
     Ticket generateTicket(const string& name, const EventLocation& location, const EventDetails& details) override {
-        const char* ticketType = "Theater";
         Ticket::ticketsSold++;
-        return Ticket(ticketType,name,location,details);
+        Ticket ticket = Ticket(Ticket::generateRandomNumber(), "Theater", name, location, details);
+        currentcashier.addTicket(ticket);
+        return ticket;
     }
 };
