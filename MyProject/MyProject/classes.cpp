@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
 
 using namespace std;
 
@@ -518,11 +519,10 @@ protected:
     string locationName = "";
     int nrZones = 0;
     Zone* zones = nullptr;
+public:
     EventLocation() {
 
     }
-public:
-
     // Setters
     void setLocationName(const string location) {
         if (location.length() < 3 || location.length() > 20) {
@@ -695,8 +695,8 @@ protected:
     char* eventName = nullptr;
     string eventDate = "";
     string eventTime = "";
-    EventDetails() {
-    }
+    EventLocation location;
+
 public:
     //Check function for date time format hh:mm
     bool isValidTimeFormat(const std::string& timeStr) {
@@ -789,17 +789,28 @@ public:
         return this->eventTime;
     }
 
+    void printLocationDetails() {
+        this->location.printLocationDetails();
+    }
+
+    void printEventSeats() {
+        this->location.displaySeatsFromZones();
+    }
+
+    void buySeatFromEvent(int numZone,int numRow,int numSeat) {
+        this->location.buyTicketFromZones(numZone,numRow,numSeat);
+    }
 
 
 
     //Constructors
-    EventDetails(const char* name, const string& datestr, const string& timestr) {
+    EventDetails(const char* name, const string& datestr, const string& timestr, const EventLocation& location1): location(location1){
         setEventName(name);
         setEventDate(datestr);
         setEventTime(timestr);
     }
 
-    EventDetails(const char* name, const string& datestr) {
+    EventDetails(const char* name, const string& datestr,const EventLocation& location1):location(location1){
         setEventName(name);
         setEventDate(datestr);
     }
@@ -833,7 +844,7 @@ public:
     }
 
     //Copy CTR
-    EventDetails(const EventDetails& source) {
+    EventDetails(const EventDetails& source): location(source.location){
         setEventDate(source.eventDate);
         setEventTime(source.eventTime);
         if (this->eventName == source.eventName) {
@@ -863,7 +874,6 @@ protected:
     const int uniqueId;
     char* ticketType = nullptr;
     string holderName = "";
-    EventLocation location;
     EventDetails details;
 
 public:
@@ -920,11 +930,11 @@ public:
         return this->uniqueId;
     }
 
-    Ticket(int id,const char* type,const EventLocation& loc,const EventDetails& det) : uniqueId(++id), location(loc), details(det) {
+    Ticket(int id,const char* type,const EventDetails& det) : uniqueId(++id), details(det) {
         setTicketType(type);;
     }
 
-    Ticket(int id,const char* type, const string& holdername, const EventLocation& loc, const EventDetails& det) :uniqueId(++id), location(loc), details(det) {
+    Ticket(int id,const char* type, const string& holdername,const EventDetails& det) :uniqueId(++id),details(det) {
         setTicketType(type);
         setHoldersName(holdername);
     }
@@ -938,15 +948,26 @@ public:
         }
     }
 
-    Ticket(const Ticket& source):uniqueId(source.uniqueId),location(source.location),details(source.details){
-       
-        if (this->uniqueId == source.uniqueId) {
+    Ticket& operator=(const Ticket& source){
+        if (this->ticketType == source.ticketType) {
             exit;
         }
-        else if(source.holderName != ""){
-            this->holderName = source.holderName;
+        this->holderName = source.holderName;
+        this->details = source.details;
+        if (!source) {
+            delete[] this->ticketType;
+            this->ticketType = new char[strlen(source.ticketType) + 1];
+            strcpy_s(this->ticketType, strlen(source.ticketType) + 1, source.ticketType);
         }
-        else if (!source) {
+        else {
+            throw exception("Trying to copy from a source with the dynamic attribute eventName equal to a nullptr(EventDetails Copy CTR)");
+        }
+        return *this;
+    }
+
+    Ticket(const Ticket& source):uniqueId(source.uniqueId), details(source.details){
+        this->holderName = source.holderName;
+        if (!source) {
             delete[] this->ticketType;
             this->ticketType= new char[strlen(source.ticketType) + 1];
             strcpy_s(this->ticketType, strlen(source.ticketType) + 1, source.ticketType);
@@ -965,16 +986,29 @@ public:
 };
 
 class SoldTickets {
-
+protected:
+ vector <Ticket> sold_tickets;
 public:
-    vector <Ticket> sold_tickets;
+
+    int getSize() {
+        return sold_tickets.size();
+    }
+
     void addTicket(Ticket& ticket) {
         sold_tickets.push_back(ticket);
     }
 
+    bool ticketValidator(int id) {
+        for (int i = 0; i < this->sold_tickets.size(); i++) {
+            if (sold_tickets[i].getId() == id)
+                return true;
+        }
+        return false;
+    }
+    
     void printSoldTickets() {
-        for (auto it = this->sold_tickets.begin(); it != this->sold_tickets.end(); it++) {
-            cout<<it->getHoldersName();
+        for (int i = 0; i < this->sold_tickets.size(); i++) {
+        cout<< sold_tickets[i].getId()<<" ";
         }
     }
 };
@@ -985,7 +1019,7 @@ protected:
     SoldTickets& currentcashier;
 public:
     TicketFactory(SoldTickets& soldTicketsRef) : currentcashier(soldTicketsRef) {};
-    virtual Ticket generateTicket(const string& name, const EventLocation& location, const EventDetails& details) = 0;
+    virtual Ticket generateTicket(const string& name,const EventDetails& details) = 0;
     virtual ~TicketFactory() = default;
 };
 
@@ -993,9 +1027,9 @@ public:
 class FootballTicketFactory : public TicketFactory {
 public:
     FootballTicketFactory(SoldTickets& soldTicketsRef) : TicketFactory(soldTicketsRef) {};
-    Ticket generateTicket(const string& name, const EventLocation& location, const EventDetails& details) override {
+    Ticket generateTicket(const string& name, const EventDetails& details) override {
         Ticket::ticketsSold++;
-        Ticket ticket = Ticket(Ticket::generateRandomNumber(), "Football", name, location, details);
+        Ticket ticket(Ticket::generateRandomNumber(), "Football", name,details);
         currentcashier.addTicket(ticket);
         return ticket;
     }
@@ -1005,9 +1039,9 @@ public:
 class MovieTicketFactory : public TicketFactory {
 public:
     MovieTicketFactory(SoldTickets& soldTicketsRef) : TicketFactory(soldTicketsRef) {};
-    Ticket generateTicket(const string& name,const EventLocation& location, const EventDetails& details) override {
+    Ticket generateTicket(const string& name, const EventDetails& details) override {
         Ticket::ticketsSold++;
-        Ticket ticket = Ticket(Ticket::generateRandomNumber(), "Movie", name, location, details);
+        Ticket ticket(Ticket::generateRandomNumber(), "Movie", name, details);
         currentcashier.addTicket(ticket);
         return ticket;
     }
@@ -1017,10 +1051,107 @@ public:
 class TheaterTicketFactory : public TicketFactory {
 public:
     TheaterTicketFactory(SoldTickets& soldTicketsRef) : TicketFactory(soldTicketsRef) {};
-    Ticket generateTicket(const string& name, const EventLocation& location, const EventDetails& details) override {
+    Ticket generateTicket(const string& name,const EventDetails& details) override {
         Ticket::ticketsSold++;
-        Ticket ticket = Ticket(Ticket::generateRandomNumber(), "Theater", name, location, details);
+        Ticket ticket(Ticket::generateRandomNumber(), "Theater", name,details);
         currentcashier.addTicket(ticket);
         return ticket;
+    }
+};
+
+class TicketingSystem {
+protected:
+    vector<EventDetails> events;
+public:
+
+    void runTicketingSystem(int argc, char* argv[]) {
+        if (argc != 2) {
+            cerr << "Usage: " << argv[0] << " <file_with_data.txt>" << endl;
+            exit(EXIT_FAILURE);
+        }
+        string filename = argv[1];
+    }
+
+    void loadEventData(const string& filename) {
+        ifstream file(filename);
+        if (!file.is_open()) {
+            cerr << "Error opening file: " << filename << endl;
+            exit(EXIT_FAILURE);
+        }
+        file.close();
+    }
+
+    void menu() {
+        char choice;
+
+        do {
+            std::cout << "[1] Buy a ticket from an existing event.\n";
+            std::cout << "[2] Validate a ticket.\n";
+            std::cout << "[3] Create a custom ticket.\n";
+            std::cout << "[4] Quit Program\n\n";
+            std::cout << "Enter Your Choice :=> ";
+            std::cin >> choice;
+
+            system("cls");
+
+            if (choice == '1') {
+                char subChoice1;
+                do {
+                    std::cout << "\nSub-menu for buying a ticket:\n";
+                    std::cout << "[1] View available events.\n";
+                    std::cout << "[2] Select an event to buy a ticket.\n";
+                    std::cout << "[3] Return to the main menu.\n\n";
+                    std::cout << "Enter Your Choice :=> ";
+                    std::cin >> subChoice1;
+                    system("cls");
+
+                    if (subChoice1 == '1') {
+                        std::cout << "Viewing available events...\n";
+                    }
+                    else if (subChoice1 == '2') {
+                        std::cout << "Selecting an event to buy a ticket...\n";
+                    }
+                    else if (subChoice1 == '3') {
+                        std::cout << "Returning to the main menu...\n";
+                        break;
+                    }
+                    else {
+                        std::cout << "Invalid choice. Please enter a valid option.\n";
+                    }
+                } while (true);
+
+            }
+            else if (choice == '2') {
+                std::cout << "\nSub-menu for validating a ticket:\n";
+                std::cout << "[1] Enter the ticket code manually.\n";
+                std::cout << "[2] Return to the main menu.\n\n";
+                std::cout << "Enter Your Choice :=> ";
+
+                char subChoice2;
+                std::cin >> subChoice2;
+                system("cls");
+
+                 if (subChoice2 == '1') {
+                    std::cout << "Entering the ticket code manually...\n";
+                }
+                else if (subChoice2 == '2') {
+                    std::cout << "Returning to the main menu...\n";
+                }
+                else {
+                    std::cout << "Invalid choice. Please enter a valid option.\n";
+                }
+
+            }
+            else if (choice == '3') {
+                std::cout << "Creating a custom ticket...\n";
+            }
+            else if (choice == '4') {
+                std::cout << "Quitting the program...\n";
+            }
+            else {
+                std::cout << "Invalid choice. Please enter a valid option.\n\n";
+            }
+
+        } while (choice != '4');
     }
 };
