@@ -232,6 +232,7 @@ public:
     //Displaying attribute function
     void displaySeats() {
         if (this->noSeats != 0) {
+            cout << "\t";
             for (int i = 0; i < this->noSeats; i++) {
                 seats[i].displaySeat();
             }
@@ -575,13 +576,17 @@ public:
     void getAvailableZoneNames() {
         if (this->zones != nullptr) {
             for (int i = 0; i < this->nrZones; i++) {
-                cout << this->zones[i].getZoneName() << "\t";
+                cout <<"["<<i<<"]"<<this->zones[i].getZoneName() << "\t";
             }
             cout << endl;
         }
         else {
             throw exception("No zones available! Please add at least one");
         }
+    }
+
+    string getZoneNameWithIndex(int index) {
+        return this->zones[index].getZoneName();
     }
 
     //Displaying attributes methods
@@ -602,6 +607,15 @@ public:
         }
     }
 
+    void displaySeatsFromZone(int numzone) {
+        if (this->zones != nullptr && numzone <= this->nrZones && numzone>=0) {
+            this->zones[numzone].displayZoneseats();
+        }
+        else {
+            throw exception("That zone doesn't exist");
+        }
+    }
+
     void buyTicketFromZones(int numZone, int numRow, int numSeat) {
         if (this->zones == nullptr) {
             throw exception("There are no zones available.");
@@ -614,7 +628,7 @@ public:
         }
     }
 
-    void printLocationDetails() {
+    virtual void printLocationDetails() {
         cout <<"The location name is: " << getLocationName()<< endl;
         cout << "The location has " << getNumZones() << " zones: ";
         getAvailableZoneNames();
@@ -789,6 +803,14 @@ public:
         return this->eventTime;
     }
 
+    string getLocationName() {
+        return this->location.getLocationName();
+    }
+
+    int getNoZonesFromEvent() {
+        return this->location.getNumZones();
+    }
+
     void printLocationDetails() {
         this->location.printLocationDetails();
     }
@@ -797,11 +819,17 @@ public:
         this->location.displaySeatsFromZones();
     }
 
+    void printEventZoneSeats(int numzone) {
+        this->location.displaySeatsFromZone(numzone-1);
+    }
+
     void buySeatFromEvent(int numZone,int numRow,int numSeat) {
         this->location.buyTicketFromZones(numZone,numRow,numSeat);
     }
 
-
+    void getAvailableZoneNames() {
+        this->location.getAvailableZoneNames();
+    }
 
     //Constructors
     EventDetails(const char* name, const string& datestr, const string& timestr, const EventLocation& location1): location(location1){
@@ -883,7 +911,7 @@ public:
         return rand();
     }
 
-    void printTicketDetails() {
+    virtual void printTicketDetails() {
         cout << "Unique id of the ticket:" << this->uniqueId << endl;
         cout << "Ticket type: " << this->ticketType << endl;
         cout << "Holder name: " << this->holderName<< endl;
@@ -1062,9 +1090,18 @@ public:
 class TicketingSystem {
 protected:
     vector<EventDetails> events;
+    vector<SoldTickets> cashiers;
 public:
 
-    void runTicketingSystem(int argc, char* argv[]) {
+    void addSampleCashier(const SoldTickets& cashier) {
+        this->cashiers.push_back(cashier);
+    }
+
+    void addSampleEvent(const EventDetails& sample) {
+        this->events.push_back(sample);
+    }
+
+    void runTicketingSystemWithFile(int argc, char* argv[]) {
         if (argc != 2) {
             cerr << "Usage: " << argv[0] << " <file_with_data.txt>" << endl;
             exit(EXIT_FAILURE);
@@ -1082,76 +1119,198 @@ public:
     }
 
     void menu() {
-        char choice;
+         FootballTicketFactory football(this->cashiers[0]);
+         string name;
+         bool boughtTicket = false;
+         string choice;
+         cout << "Enter the customer's full name:";
+         cin >> name;
+         system("pause");
+         system("cls");
+         do {
+             cout << "\tMain Menu \n";
+             cout << "[1] Buy a ticket from an existing event.\n";
+             cout << "[2] Validate a ticket.\n";
+             cout << "[3] Create a custom ticket.\n";
+             cout << "[4] Quit Program\n\n";
+             cout << "Enter Your Choice :=> ";
+             cin >> choice;
+             system("cls");
+             if (choice[0] == '1' && isdigit(choice[0]) && choice.length() == 1) {
+                 string subChoiceEvents;
+                 do {
+                     cout << "Sub-menu for selecting an event\n\n";
+                     for (int i = 0; i < this->events.size(); i++) {
+                         cout << "[" << i + 1 << "]" << " Event : " << this->events[i].getEventName() << " " << this->events[i].getEventDate() << " " << this->events[i].getEventTime() << " " << this->events[i].getLocationName() << endl;
+                     }
+                     cout << "\nPress the number of an existing event or press q to quit and go to the main menu\n\n";
+                     cout << "Enter Your Choice :=> ";
+                     cin >> subChoiceEvents;
+                     int intformchoice = int(subChoiceEvents[0]) - '0';
+                     system("cls");
+                     if (subChoiceEvents.length()==1 && isdigit(subChoiceEvents[0]) && intformchoice <= this->events.size()) {
+                         string subChoiceZone;
+                         do {
+                             cout << "You selected event : " << this->events[intformchoice - 1].getEventName() << " " << this->events[intformchoice - 1].getEventDate() << " " << this->events[intformchoice - 1].getEventTime() << " " << this->events[intformchoice - 1].getLocationName() << endl;
+                             cout << "This event has " << this->events[intformchoice - 1].getNoZonesFromEvent() << " zones: ";
+                             this->events[intformchoice - 1].getAvailableZoneNames();
+                             cout << "\nPress the number of an existing zone or press q to quit and go to the event submenu\n\n";
+                             cout << "Enter Your Choice :=> ";
+                             cin >> subChoiceZone;
+                             int intFormSubChoiceZone = int(subChoiceZone[0]) - '0';
 
-        do {
-            std::cout << "[1] Buy a ticket from an existing event.\n";
-            std::cout << "[2] Validate a ticket.\n";
-            std::cout << "[3] Create a custom ticket.\n";
-            std::cout << "[4] Quit Program\n\n";
-            std::cout << "Enter Your Choice :=> ";
-            std::cin >> choice;
+                             system("cls");
+                             if (subChoiceZone.length()==1 && isdigit(subChoiceZone[0]) && intFormSubChoiceZone <= this->events[intFormSubChoiceZone - 1].getNoZonesFromEvent()) {
+                                 string subChoiceRow;
+                                 string subChoiceSeat;
+                                 do {
+                                     cout << "\nThe available rows with the seats :\n";
+                                         this->events[intFormSubChoiceZone - 1].printEventZoneSeats(intFormSubChoiceZone);
+                                     cout << "Enter the number of the row that you want to be in:\n ";
+                                     cin >> subChoiceRow;
+                                     cout << "Enter the number of the seat you want to buy: ";
+                                     cin >> subChoiceSeat;
+                                     int intFormSubChoiceRow = int(subChoiceRow[0]) - '0';
+                                     int intFormSubChoiceSeat = int(subChoiceSeat[0]) - '0';
+                                     system("cls");
 
-            system("cls");
+                                     if (isdigit(subChoiceRow[0]) && isdigit(subChoiceSeat[0]) && intFormSubChoiceRow > 0 && intFormSubChoiceSeat > 0) {
+                                         try {
+                                             this->events[intformchoice - 1].buySeatFromEvent(intFormSubChoiceZone, intFormSubChoiceRow, intFormSubChoiceSeat);
+                                             Ticket footballticket = football.generateTicket(name, this->events[intformchoice]);
+                                             cout << "You sucessfuly bought a ticket:";
+                                             cout << "Name: " << name<<endl;
+                                             cout << "Event Name: " << this->events[intformchoice].getEventName() << endl;
+                                             cout << "Event Location: " << this->events[intformchoice].getLocationName() << endl;
+                                             cout << "Event Date: " << this->events[intformchoice].getEventDate() << endl;
+                                             cout << "Event Time: " << this->events[intformchoice].getEventTime() << endl;
+                                             cout << "Id: " << footballticket.getId();
+                                             system("pause");
+                                             system("cls");
+                                             boughtTicket = true;
+                                             break;
+                                         }
+                                         catch (const exception& e) {
+                                             cout << e.what() << endl;
+                                         }
+                                     }
+                                     else if (subChoiceRow[0] == 'q' || subChoiceSeat[0]=='q') {
+                                         cout << "Returning to select a zone...\n";
+                                         system("pause");
+                                         system("cls");
+                                         break;
+                                     }
+                                     else if (subChoiceRow[0] == '-' || subChoiceSeat[0] == '-') {
+                                         cout << "Invalid choice. The first input character is not a number. Please enter a valid option.\n\n";
+                                         system("pause");
+                                         system("cls");
+                                     }
+                                     else if (subChoiceRow.length() != 1 || subChoiceSeat.length() != 1) {
+                                         cout << "Invalid choice. You entered more than one character as an input. Please enter a valid option.\n\n";
+                                         system("pause");
+                                         system("cls");
+                                     }
+                                     else {
+                                         cout << "Invalid choice. Please enter a valid option.\n\n";
+                                         system("pause");
+                                         system("cls");
+                                     }
+                                 } while (subChoiceRow[0] != 'q' || subChoiceSeat[0] != 'q');
+                             }
+                             else if (subChoiceZone[0] == 'q') {
+                                 cout << "Returning to select an event...\n";
+                                 system("pause");
+                                 system("cls");
+                                 break;
+                             }
+                             else if (subChoiceZone[0] == '-') {
+                                 cout << "Invalid choice. The first input character is not a number. Please enter a valid option.\n\n";
+                                 system("pause");
+                                 system("cls");
+                             }
+                             else if (subChoiceZone.length() != 1) {
+                                 cout << "Invalid choice. You entered more than one character as an input. Please enter a valid option.\n\n";
+                                 system("pause");
+                                 system("cls");
+                             }
+                             else {
+                                 cout << "Invalid choice. Please enter a valid option.\n\n";
+                                 system("pause");
+                                 system("cls");
+                             }
+                         } while (subChoiceZone[0] != 'q' && subChoiceZone.length()==1);
+                     }
+                     else if (subChoiceEvents[0] == '-') {
+                         cout << "Invalid choice. The first input character is not a number. Please enter a valid option.\n\n";
+                         system("pause");
+                         system("cls");
+                     }
+                     else if (subChoiceEvents.length() != 1) {
+                         cout << "Invalid choice. You entered more than one character as an input. Please enter a valid option.\n\n";
+                         system("pause");
+                         system("cls");
+                     }
+                     else  if (subChoiceEvents[0] == 'q') {
+                         cout << "Returning to main menu...\n";
+                         system("pause");
+                         system("cls");
+                         break;
+                     }
+                     else {
+                         cout << "Invalid choice. Please enter a valid option.\n";
+                         system("pause");
+                         system("cls");
+                     }
+                 } while (subChoiceEvents[0] != 'q');
 
-            if (choice == '1') {
-                char subChoice1;
-                do {
-                    std::cout << "\nSub-menu for buying a ticket:\n";
-                    std::cout << "[1] View available events.\n";
-                    std::cout << "[2] Select an event to buy a ticket.\n";
-                    std::cout << "[3] Return to the main menu.\n\n";
-                    std::cout << "Enter Your Choice :=> ";
-                    std::cin >> subChoice1;
-                    system("cls");
+             }
+             else if (choice[0] == '2') {
+                 char subChoice2;
+                 do {
+                     cout << "\tSub-menu for validating a ticket:\n";
+                     cout << "[1] Enter the ticket code manually:\n";
+                     cout << "[q] Return to the main menu.\n\n";
+                     cout << "Enter Your ticket code or press q to go to the main menu :=> ";
+                     cin >> subChoice2;
+                     system("cls");
 
-                    if (subChoice1 == '1') {
-                        std::cout << "Viewing available events...\n";
-                    }
-                    else if (subChoice1 == '2') {
-                        std::cout << "Selecting an event to buy a ticket...\n";
-                    }
-                    else if (subChoice1 == '3') {
-                        std::cout << "Returning to the main menu...\n";
-                        break;
-                    }
-                    else {
-                        std::cout << "Invalid choice. Please enter a valid option.\n";
-                    }
-                } while (true);
-
-            }
-            else if (choice == '2') {
-                std::cout << "\nSub-menu for validating a ticket:\n";
-                std::cout << "[1] Enter the ticket code manually.\n";
-                std::cout << "[2] Return to the main menu.\n\n";
-                std::cout << "Enter Your Choice :=> ";
-
-                char subChoice2;
-                std::cin >> subChoice2;
-                system("cls");
-
-                 if (subChoice2 == '1') {
-                    std::cout << "Entering the ticket code manually...\n";
-                }
-                else if (subChoice2 == '2') {
-                    std::cout << "Returning to the main menu...\n";
-                }
-                else {
-                    std::cout << "Invalid choice. Please enter a valid option.\n";
-                }
-
-            }
-            else if (choice == '3') {
-                std::cout << "Creating a custom ticket...\n";
-            }
-            else if (choice == '4') {
-                std::cout << "Quitting the program...\n";
-            }
+                     if (subChoice2 == '1') {
+                         cout << "Entering the ticket code manually...\n";
+                     }
+                     else if (subChoice2 == 'q') {
+                         cout << "Returning to the main menu...\n";
+                         system("pause");
+                         system("cls");
+                     }
+                     else {
+                         cout << "Invalid choice. Please enter a valid option.\n";
+                         system("pause");
+                         system("cls");
+                     }
+                 } while (subChoice2 != 'q');
+             }
+             else if (choice[0] == '3') {
+                 cout << "Creating a custom ticket...\n";
+             }
+             else if (choice[0] == '4') {
+                 cout << "Quitting the program...\n";
+             }
+             else if (choice[0] == '-') {
+                 cout << "Invalid choice. The first input character is not a number. Please enter a valid option.\n\n";
+                 system("pause");
+                 system("cls");
+             }
+             else if (choice.length() != 1) {
+                 cout << "Invalid choice. You entered more than one character as an input. Please enter a valid option.\n\n";
+                 system("pause");
+                 system("cls");
+             }
             else {
-                std::cout << "Invalid choice. Please enter a valid option.\n\n";
+                cout << "Invalid choice. Please enter a valid option.\n\n";
+                system("pause");
+                system("cls");
             }
 
-        } while (choice != '4');
+         } while (choice[0]!= '4');
     }
 };
