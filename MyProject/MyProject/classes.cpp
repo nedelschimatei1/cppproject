@@ -807,6 +807,10 @@ public:
         return this->location.getLocationName();
     }
 
+    string getEventZoneWithIndex(int index) {
+        return this->location.getZoneNameWithIndex(index);
+    }
+
     int getNoZonesFromEvent() {
         return this->location.getNumZones();
     }
@@ -1081,7 +1085,7 @@ public:
     TheaterTicketFactory(SoldTickets& soldTicketsRef) : TicketFactory(soldTicketsRef) {};
     Ticket generateTicket(const string& name,const EventDetails& details) override {
         Ticket::ticketsSold++;
-        Ticket ticket(Ticket::generateRandomNumber(), "Theater", name,details);
+        Ticket ticket(Ticket::generateRandomNumber(),"Theater",name,details);
         currentcashier.addTicket(ticket);
         return ticket;
     }
@@ -1119,13 +1123,7 @@ public:
     }
 
     void menu() {
-         FootballTicketFactory football(this->cashiers[0]);
-         string name;
-         bool boughtTicket = false;
          string choice;
-         cout << "Enter the customer's full name:";
-         cin >> name;
-         system("pause");
          system("cls");
          do {
              cout << "\tMain Menu \n";
@@ -1134,6 +1132,7 @@ public:
              cout << "[3] Create a custom ticket.\n";
              cout << "[4] Quit Program\n\n";
              cout << "Enter Your Choice :=> ";
+             bool boughtTicket = false;
              cin >> choice;
              system("cls");
              if (choice[0] == '1' && isdigit(choice[0]) && choice.length() == 1) {
@@ -1177,14 +1176,26 @@ public:
                                      if (isdigit(subChoiceRow[0]) && isdigit(subChoiceSeat[0]) && intFormSubChoiceRow > 0 && intFormSubChoiceSeat > 0) {
                                          try {
                                              this->events[intformchoice - 1].buySeatFromEvent(intFormSubChoiceZone, intFormSubChoiceRow, intFormSubChoiceSeat);
-                                             Ticket footballticket = football.generateTicket(name, this->events[intformchoice]);
-                                             cout << "You sucessfuly bought a ticket:";
-                                             cout << "Name: " << name<<endl;
-                                             cout << "Event Name: " << this->events[intformchoice].getEventName() << endl;
-                                             cout << "Event Location: " << this->events[intformchoice].getLocationName() << endl;
-                                             cout << "Event Date: " << this->events[intformchoice].getEventDate() << endl;
-                                             cout << "Event Time: " << this->events[intformchoice].getEventTime() << endl;
-                                             cout << "Id: " << footballticket.getId();
+                                             string name;
+                                             cout << "Enter the customer's full name:"<<endl;
+                                             cin >> name;
+                                             FootballTicketFactory footballfactory(this->cashiers[0]);
+                                             Ticket ticket1 = footballfactory.generateTicket(name, this->events[intformchoice-1]);
+                                             system("pause");
+                                             system("cls");
+
+                                             cout << "You sucessfuly bought a ticket\n\n\n";
+                                             cout << "----------------------------------------------------------------------------\n";
+                                             cout << "\t\t\tName: " << name<<endl;
+                                             cout << "\t\t\tEvent Name: " << this->events[intformchoice-1].getEventName() << endl;
+                                             cout << "\t\t\tLocation: " << this->events[intformchoice-1].getLocationName() << endl;
+                                             cout << "\t\t\tDate: " << this->events[intformchoice-1].getEventDate() << endl;
+                                             cout << "\t\t\tTime: " << this->events[intformchoice-1].getEventTime() << endl;
+                                             cout << "\t\t\tZone: " << this->events[intformchoice-1].getEventZoneWithIndex(intFormSubChoiceZone-1)<< endl;
+                                             cout << "\t\t\tRow: " << intFormSubChoiceRow << endl;
+                                             cout << "\t\t\tSeat: " << intFormSubChoiceSeat << endl;
+                                             cout << "\t\t\tId: " << ticket1.getId() << endl;
+                                             cout << "----------------------------------------------------------------------------\n\n\n";
                                              system("pause");
                                              system("cls");
                                              boughtTicket = true;
@@ -1238,7 +1249,7 @@ public:
                                  system("pause");
                                  system("cls");
                              }
-                         } while (subChoiceZone[0] != 'q' && subChoiceZone.length()==1);
+                         } while (subChoiceZone[0] != 'q' && subChoiceZone.length() == 1 && boughtTicket==false);
                      }
                      else if (subChoiceEvents[0] == '-') {
                          cout << "Invalid choice. The first input character is not a number. Please enter a valid option.\n\n";
@@ -1261,7 +1272,7 @@ public:
                          system("pause");
                          system("cls");
                      }
-                 } while (subChoiceEvents[0] != 'q');
+                 } while (subChoiceEvents[0] != 'q'&& boughtTicket == false);
 
              }
              else if (choice[0] == '2') {
