@@ -1,0 +1,8 @@
+STAND1
+100
+4
+4
+Bucharest
+The_Grinch
+01-10-2003
+20-22

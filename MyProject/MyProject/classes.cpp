@@ -1031,30 +1031,20 @@ public:
 
 class SoldTickets {
 protected:
- vector <Ticket> sold_tickets;
+ vector <int> sold_tickets;
 public:
 
     int getSize() {
         return sold_tickets.size();
     }
 
-    void addTicket(Ticket& ticket) {
-        sold_tickets.push_back(ticket);
-    }
-
-    bool isVip(int id) {
-        for (int i = 0; i < this->sold_tickets.size(); i++) {
-            if (sold_tickets[i].getId() == id)
-                if (string(sold_tickets[i].getTicketType()) == "VIP") {
-                    return true;
-                }
-        }
-        return false;
+    void addTicket(int id) {
+        sold_tickets.push_back(id);
     }
 
     bool ticketValidator(int id) {
         for (int i = 0; i < this->sold_tickets.size(); i++) {
-            if (sold_tickets[i].getId() == id)
+            if (sold_tickets[i] == id)
                 return true;
         }
         return false;
@@ -1062,7 +1052,7 @@ public:
     
     void printSoldTickets() {
         for (int i = 0; i < this->sold_tickets.size(); i++) {
-        cout<< sold_tickets[i].getId()<<" ";
+        cout<< sold_tickets[i]<<" ";
         }
     }
 };
@@ -1084,7 +1074,7 @@ public:
     Ticket generateTicket(const string& name, const EventDetails& details) override {
         Ticket::ticketsSold++;
         Ticket ticket(Ticket::generateRandomNumber(), "VIP", name,details);
-        currentcashier.addTicket(ticket);
+        currentcashier.addTicket(ticket.getId());
         return ticket;
     }
 };
@@ -1096,7 +1086,7 @@ public:
     Ticket generateTicket(const string& name, const EventDetails& details) override {
         Ticket::ticketsSold++;
         Ticket ticket(Ticket::generateRandomNumber(), "General", name, details);
-        currentcashier.addTicket(ticket);
+        currentcashier.addTicket(ticket.getId());
         return ticket;
     }
 };
@@ -1121,15 +1111,22 @@ public:
         this->events.push_back(sample);
     }
 
-    void runTicketingSystemWithFile(int argc, char* argv[]) {
-        if (argc != 2) {
-            cerr << "Usage: " << argv[0] << " <file_with_data.txt>" << endl;
-            exit(EXIT_FAILURE);
-        } else{
-            string filename = argv[1];
-            loadEventData(filename);
+     void loadBinary(const string& file) {
+        ifstream file1(file, ios::binary);
+        if (file1.is_open()) { 
+            int value;
+            file1.read((char*)&value, sizeof(int));
+            this->cashiers[0].addTicket(value);
+            file1.close(); 
+        } 
+    }
+
+    static void writeBinary(const string& file, int id) {
+        ofstream file1(file, ios::out | ios::binary | ios::app);
+        if (file1.is_open()) {
+            file1.write((char*)&id, sizeof(int));
+            file1.close();
         }
-        
     }
 
     void loadEventData(const string& filename) {
@@ -1145,7 +1142,7 @@ public:
             file >> nrSeats;
             string eventlocation;
             file >> eventlocation;
-            char* eventName
+            string eventName;
             file >> eventName;
             string eventDate;
             file >> eventDate;
@@ -1153,7 +1150,9 @@ public:
             file >> eventTime;
             Zone zone(zoneName, ticketprice, nrRows, nrSeats);
             EventLocation location(eventlocation, zone);
-            EventDetails event1(eventName, eventDate, eventTime,location);
+            char* newname = new char[eventName.length() + 1];
+            strcpy_s(newname, eventName.length() + 1,eventName.c_str());
+            EventDetails event1(newname, eventDate, eventTime,location);
             this->events.push_back(event1);
             file.close();
         }
@@ -1253,6 +1252,7 @@ public:
                                                  }
                                              } while (isvip == false&& isgen ==false);
                                              string name;
+                                             string ticketype;
                                              cout << "Enter the customer's full name:"<<endl;
                                              cin >> name;
                                              int id;
@@ -1261,12 +1261,16 @@ public:
                                                  VIPTicketFactory vipticketfactory(this->cashiers[0]);
                                                  Ticket ticket = vipticketfactory.generateTicket(name, this->events[intformchoice - 1]);
                                                  id = ticket.getId();
+                                                 TicketingSystem::writeBinary("binary.dat", id);
+                                                 ticketype = ticket.getTicketType();
                                              }
                                              else {
                                                  this->events[intformchoice - 1].buySeatFromEvent(intFormSubChoiceZone, intFormSubChoiceRow, intFormSubChoiceSeat, false);
                                                  GeneralTicketFactory generalticketfactory(this->cashiers[0]);
                                                  Ticket ticket = generalticketfactory.generateTicket(name, this->events[intformchoice - 1]);
                                                  id = ticket.getId();
+                                                 TicketingSystem::writeBinary("binary.dat",id);
+                                                 ticketype = ticket.getTicketType();
                                              }
                                              system("pause");
                                              system("cls");
@@ -1280,6 +1284,7 @@ public:
                                              cout << "\t\t\tZone: " << this->events[intformchoice-1].getEventZoneWithIndex(intFormSubChoiceZone-1)<< endl;
                                              cout << "\t\t\tRow: " << intFormSubChoiceRow << endl;
                                              cout << "\t\t\tSeat: " << intFormSubChoiceSeat << endl;
+                                             cout << "\t\t\tTicket Type: " << ticketype << endl;
                                              cout << "\t\t\tId: " << id << endl;
                                              cout << "----------------------------------------------------------------------------\n\n\n";
                                              system("pause");
@@ -1374,16 +1379,8 @@ public:
                      system("cls");
 
                      if (is_number(subChoice2)&& stoi(subChoice2)>0) {
-                         if (this->cashiers[0].ticketValidator(stoi(subChoice2)) && this->cashiers[0].isVip(stoi(subChoice2))){
-                             cout<<"The ticket is valid!\n";
-                             cout << "Also the ticket is a VIP one.\n\n";
-                             system("pause");
-                             system("cls");
-                             didAction = true;
-                         }
-                         else if (this->cashiers[0].ticketValidator(stoi(subChoice2)) && !this->cashiers[0].isVip(stoi(subChoice2))) {
-                             cout << "The ticket is valid!\n";
-                             cout << "Also the ticket is a General one.\n\n";
+                         if (this->cashiers[0].ticketValidator(stoi(subChoice2))){
+                             cout << "The ticket is valid!\n\n";
                              system("pause");
                              system("cls");
                              didAction = true;
