@@ -113,7 +113,7 @@ public:
             return false;
         }
     }
-
+     
     //Constructors
     Seat(int number, bool available) {
         this->isAvailable = available;
@@ -163,13 +163,11 @@ public:
         }
     }
 
-
     Seat() {
 
-    }
+    };
 
 };
-
 
 class Row {
 protected:
@@ -1111,14 +1109,15 @@ public:
         this->events.push_back(sample);
     }
 
-     void loadBinary(const string& file) {
+    void loadBinary(const string& file) {
         ifstream file1(file, ios::binary);
-        if (file1.is_open()) { 
+        if (file1.is_open()) {
             int value;
-            file1.read((char*)&value, sizeof(int));
-            this->cashiers[0].addTicket(value);
-            file1.close(); 
-        } 
+            while (file1.read((char*)&value, sizeof(int))) {
+                this->cashiers[0].addTicket(value);
+            }
+            file1.close();
+        }
     }
 
     static void writeBinary(const string& file, int id) {
@@ -1168,7 +1167,7 @@ public:
              cout << "\tMain Menu \n";
              cout << "[1] Buy a ticket from an existing event.\n";
              cout << "[2] Validate a ticket.\n";
-             cout << "[3] Create a custom ticket.\n";
+             cout << "[3] Create a custom event.\n";
              cout << "[4] Quit Program\n\n";
              cout << "Enter Your Choice :=> ";
              bool boughtTicket = false;
@@ -1417,37 +1416,52 @@ public:
                  m[STAND2] = "Stand 2";
                  m[LAWN] = "Lawn";
                  string zonenamestr;
+                 string zonenamestr2;
                  int zonechoice;
+                 int zonechoice2;
                  int ticketprice;
+                 int ticketprice2;
                  int noRows;
                  int noSeatsPerRow;
+                 int noRows2;
+                 int noSeatsPerRow2;
                  do {
                      cout << "Enter the first zone name you event will have:\n";
                      cout << "CATEGORY1 = 1, CATEGORY2 = 2, BOX = 3, STAND1 = 4, STAND2 = 5, VIP = 6\n";
-                     cout << "Enter the choice for zone name: ";
+                     cout << "Enter the choice for zone 1 name: ";
                      cin >> zonechoice;
+                     cout << "\nEnter the choice for zone 2 name: ";
+                     cin >> zonechoice2;
                      system("pause");
                      system("cls");
-                     if (zonechoice >= CATEGORY1 && zonechoice <= LAWN) {
+                     if (zonechoice >= CATEGORY1 && zonechoice <= LAWN && zonechoice2 >= CATEGORY1 && zonechoice2 <= LAWN) {
                          zonenamestr = m[(ZoneName)zonechoice];
+                         zonenamestr2 = m[(ZoneName)zonechoice2];
                          system("cls");
                          do {
-                             cout << "Enter the price of tickets for this zone:";
+                             cout << "Enter the price of tickets for zone 1: ";
                              cin >> ticketprice;
+                             cout << "\nEnter the price of tickets for zone 2: ";
+                             cin >> ticketprice2;
                              system("pause");
                              system("cls");
-                             if (ticketprice > 0) {
+                             if (ticketprice > 0 && ticketprice2>0) {
                                  do {
-                                     cout << "Enter the number of rows and Seats you want to have in your zone\n\n";
-                                     cout << "Enter the number of rows: ";
+                                     cout << "Enter the number of rows and Seats you want to have in your zones\n\n";
+                                     cout << "Enter the number of rows for zone 1: ";
                                      cin >> noRows;
-                                     cout << "\nEnter the number of seats per row: ";
+                                     cout << "\nEnter the number of seats per row for zone 1: ";
                                      cin >> noSeatsPerRow;
+                                     cout << "\n\nEnter the number of rows for zone 2: ";
+                                     cin >> noRows2;
+                                     cout << "\nEnter the number of seats per row for zone 2: ";
+                                     cin >> noSeatsPerRow2;
                                      system("pause");
                                      system("cls");
-                                     if (noRows > 0 && noSeatsPerRow>0) {
+                                     if (noRows > 0 && noSeatsPerRow>0 && noRows2>0 && noSeatsPerRow2>0) {
                                          try {
                                              Zone z1(zonenamestr, ticketprice, noRows, noSeatsPerRow);
+                                             Zone z2(zonenamestr2,ticketprice2,noRows2,noSeatsPerRow2);
                                              string eventlocationame;
                                              do {
                                                  cout << "Enter the event location: ";
@@ -1459,6 +1473,7 @@ public:
                                                      try {
                                                          string eventName;
                                                          EventLocation ev(eventlocationame, z1);
+                                                         ev.addZone(z2);
                                                          do {
                                                              cout << "Enter your event name (min 5 characters max 25): ";
                                                              cin >> eventName;
@@ -1493,7 +1508,7 @@ public:
                                                                                  }
                                                                              }
                                                                              else {
-                                                                                 cout << "Invalid time format, try again using this format: hh:mm.\n";
+                                                                                 cout << "Invalid time format, try again using this format: hh-mm (for example 20-23).\n";
                                                                                  system("pause");
                                                                                  system("cls");
                                                                              }
@@ -1532,21 +1547,21 @@ public:
                                          }
                                      }
                                      else {
-                                         cout << "Invalid input , both need to be > 0\n\n";
+                                         cout << "Invalid input , all values need to be > 0\n\n";
                                          system("pause");
                                          system("cls");
                                      }
                                  } while (quit == false);
                              }
                              else {
-                                 cout << "Invalid price, try again\n\n";
+                                 cout << "Invalid price, try again (should be > 0 )\n\n";
                                  system("pause");
                                  system("cls");
                              }
                          }while (quit == false);
                      }
                      else {
-                         cout << "Invalid input, choose between 1 and 6\n\n";
+                         cout << "Invalid input, choose between 1 and 6 for both zones\n\n";
                          system("pause");
                          system("cls");
                      }
