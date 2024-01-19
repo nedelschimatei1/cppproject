@@ -349,7 +349,7 @@ public:
     //Setters
     void setZoneName(const string& zoneName) {
         char namechar = zoneName.at(0);
-        if (zoneName.length() > 3 || zoneName.length() < 20 && !isupper(namechar)){
+        if (zoneName.length() >= 3 || zoneName.length() <= 20 && !isupper(namechar)){
             this->zoneName = zoneName;
         }
         else throw exception("Lenght of zoneName < 3 or zoneName > 20 or the first letter is not a capital one, enter a valid one.");
@@ -1481,44 +1481,46 @@ public:
                                                              system("cls");
                                                              if (eventName.length()>5 && eventName.length()< 25) {
                                                                  try {
-                                                                     string eventDate;
-                                                                     cout << "Enter the event date (format: dd-mm-yyyy): ";
-                                                                     cin >> eventDate;
-                                                                     system("pause");
-                                                                     system("cls");
-                                                                     if (EventDetails::isValidDateFormat(eventDate)) {
-                                                                         string eventTime;
-                                                                         do {
-                                                                             cout << "\nEnter the event time (format: hh-mm ): ";
-                                                                             cin >> eventTime;
-                                                                             system("pause");
-                                                                             system("cls");
-                                                                             if (eventTime.length()== 5) {
-                                                                                 try {
-                                                                                     const char* nameofevent = eventName.c_str();
-                                                                                     EventDetails event(nameofevent,eventDate,eventTime,ev);
-                                                                                     this->events.push_back(event);
-                                                                                     system("pause");
-                                                                                     quit = true;
-                                                                                     system("cls");
-                                                                                     break;
-                                                                                 }
-                                                                                 catch (const exception& e) {
-                                                                                     cout << e.what() << endl;
-                                                                                 }
-                                                                             }
-                                                                             else {
-                                                                                 cout << "Invalid time format, try again using this format: hh-mm (for example 20-23).\n";
-                                                                                 system("pause");
-                                                                                 system("cls");
-                                                                             }
-                                                                             
-                                                                         } while (quit == false);
-                                                                     }
-                                                                     else {
-                                                                         cout << "Invalid date format, try again using this format: dd-mm-yyyy.\n";
+                                                                     while (quit == false) {
+                                                                         string eventDate;
+                                                                         cout << "Enter the event date (format: dd-mm-yyyy): ";
+                                                                         cin >> eventDate;
                                                                          system("pause");
                                                                          system("cls");
+                                                                         if (EventDetails::isValidDateFormat(eventDate)) {
+                                                                             string eventTime;
+                                                                             do {
+                                                                                 cout << "\nEnter the event time (format: hh-mm ): ";
+                                                                                 cin >> eventTime;
+                                                                                 system("pause");
+                                                                                 system("cls");
+                                                                                 if (eventTime.length() == 5) {
+                                                                                     try {
+                                                                                         const char* nameofevent = eventName.c_str();
+                                                                                         EventDetails event(nameofevent, eventDate, eventTime, ev);
+                                                                                         this->events.push_back(event);
+                                                                                         system("pause");
+                                                                                         quit = true;
+                                                                                         system("cls");
+                                                                                         break;
+                                                                                     }
+                                                                                     catch (const exception& e) {
+                                                                                         cout << e.what() << endl;
+                                                                                     }
+                                                                                 }
+                                                                                 else {
+                                                                                     cout << "Invalid time format, try again using this format: hh-mm (for example 20-23).\n";
+                                                                                     system("pause");
+                                                                                     system("cls");
+                                                                                 }
+
+                                                                             } while (quit == false);
+                                                                         }
+                                                                         else {
+                                                                             cout << "Invalid date format, try again using this format: dd-mm-yyyy.\n";
+                                                                             system("pause");
+                                                                             system("cls");
+                                                                         }
                                                                      }
                                                                  }
                                                                  catch (const exception& e) {
