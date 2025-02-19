@@ -1,2 +1,2 @@
 # cppproject
-My C++ project
+Ticketing app using OOP in C++
